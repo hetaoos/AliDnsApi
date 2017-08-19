@@ -5,17 +5,15 @@ using System.Text;
 namespace AliDns.DomainRecord
 {
     /// <summary>
-    /// 添加解析记录结果
+    /// 默认返回结果
     /// </summary>
-    /// <seealso cref="AliDns.IAliDnsApiResult" />
-    public class AddDomainRecordResult : IAliDnsApiResult
+    /// <seealso cref="AliDns.IAliDnsApiBaseResult" />
+    public class DefaultDomainRecordResult : IAliDnsApiBaseResult
     {
         /// <summary>
         /// 解析记录的ID
         /// </summary>
         public string RecordId { get; set; }
-
-
-
+        
     }
 }

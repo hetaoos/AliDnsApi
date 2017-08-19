@@ -13,7 +13,7 @@ namespace AliDns.DomainRecord
         /// <summary>
         /// 操作接口名，系统规定参数
         /// </summary>
-        public string Action => "AddDomainRecord";
+        public virtual string Action => "AddDomainRecord";
 
         /// <summary>
         /// 域名名称

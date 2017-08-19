@@ -5,7 +5,18 @@ namespace AliDns
     /// <summary>
     /// 返回结果
     /// </summary>
-    public class IAliDnsApiResult
+    public interface IAliDnsApiResult
+    {
+        /// <summary>
+        /// 唯一识别码
+        /// </summary>
+        string RequestId { get; set; }
+    }
+
+    /// <summary>
+    /// 返回结果
+    /// </summary>
+    public class IAliDnsApiBaseResult : IAliDnsApiResult
     {
         /// <summary>
         /// 唯一识别码
@@ -16,7 +27,7 @@ namespace AliDns
     /// <summary>
     /// 分页返回结果
     /// </summary>
-    public class IAliDnsApiPageResult : IAliDnsApiResult
+    public class IAliDnsApiPageResult : IAliDnsApiBaseResult
     {
         /// <summary>
         /// 当前页码
