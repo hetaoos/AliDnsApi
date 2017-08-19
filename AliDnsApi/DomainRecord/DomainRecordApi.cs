@@ -29,5 +29,15 @@ namespace AliDns.DomainRecord
         {
             return await api.GetAsync<DescribeDomainRecordsParam, DescribeDomainRecordsResult>(param);
         }
+
+        /// <summary>
+        /// 添加解析记录
+        /// </summary>
+        /// <param name="param">The parameter.</param>
+        /// <returns></returns>
+        public async Task<AddDomainRecordResult> AddDomainRecord(AddDomainRecordParam param)
+        {
+            return await api.GetAsync<AddDomainRecordParam, AddDomainRecordResult>(param);
+        }
     }
 }

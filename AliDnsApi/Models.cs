@@ -130,7 +130,7 @@ namespace AliDns
         /// <summary>
         /// MX记录的优先级
         /// </summary>
-        public int Priority { get; set; }
+        public int? Priority { get; set; }
         /// <summary>
         /// 解析线路
         /// </summary>

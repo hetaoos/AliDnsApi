@@ -23,8 +23,16 @@ namespace AliDns
         public string AccessId { get; set; }
         public string AccessKey { get; set; }
 
-        public DomainRecordApi DomainRecord { get; }
         private HttpClient client;
+
+        /// <summary>
+        /// 解析管理接口
+        /// </summary>
+        /// <value>
+        /// The domain record.
+        /// </value>
+        public DomainRecordApi DomainRecord { get; }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AliDnsApi"/> class.
