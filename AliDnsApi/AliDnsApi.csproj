@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <RootNamespace>AliDns</RootNamespace>
+    <Authors>Ho Null</Authors>
+    <PackageProjectUrl>https://github.com/hetaoos/AliDnsApi</PackageProjectUrl>
+    <Copyright>hetaoos@gmail.com</Copyright>
+    <Description>阿里云的域名云解析SDK for .NET Core 2.0</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+  </ItemGroup>
+
+</Project>
