@@ -98,5 +98,15 @@ namespace AliDns.DomainRecord
         {
             return await api.GetAsync<DeleteSubDomainRecordsParam, DeleteSubDomainRecordsResult>(param);
         }
+
+        /// <summary>
+        /// 获取域名的解析操作日志
+        /// </summary>
+        /// <param name="param">The parameter.</param>
+        /// <returns></returns>
+        public async Task<DescribeRecordLogsResult> DescribeRecordLogs(DescribeRecordLogsParam param)
+        {
+            return await api.GetAsync<DescribeRecordLogsParam, DescribeRecordLogsResult>(param);
+        }
     }
 }

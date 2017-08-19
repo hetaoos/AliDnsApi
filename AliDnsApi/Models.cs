@@ -149,4 +149,48 @@ namespace AliDns
             return $"{RR}.{DomainName} {Type} {Value}";
         }
     }
+
+    /// <summary>
+    /// 域名操作日志
+    /// </summary>
+    public class DomainRecordLogs
+    {
+        /// <summary>
+        /// 记录
+        /// </summary>
+        public List<RecordLogItem> RecordLog { get; set; }
+
+        public override string ToString()
+        {
+            return $"Count: {RecordLog?.Count ?? 0}";
+        }
+    }
+
+    /// <summary>
+    /// 域名操作日志
+    /// </summary>
+    public class RecordLogItem
+    {
+        /// <summary>
+        /// G操作时间
+        /// </summary>
+        public DateTime ActionTime { get; set; }
+        /// <summary>
+        /// 	操作行为
+        /// </summary>
+        public string Action { get; set; }
+        /// <summary>
+        /// 操作消息
+        /// </summary>
+        public string Message { get; set; }
+        /// <summary>
+        /// 操作者IP
+        /// </summary>
+        public string ClientIp { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Action} {Message}";
+        }
+    }
 }
