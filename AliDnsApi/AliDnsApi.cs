@@ -1,4 +1,5 @@
-﻿using AliDns.DomainRecord;
+﻿using AliDns.Domain;
+using AliDns.DomainRecord;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -32,6 +33,13 @@ namespace AliDns
         /// The domain record.
         /// </value>
         public DomainRecordApi DomainRecord { get; }
+        /// <summary>
+        /// 域名管理接口
+        /// </summary>
+        /// <value>
+        /// The domain.
+        /// </value>
+        public DomainApi Domain { get; }
 
 
         /// <summary>
@@ -47,6 +55,7 @@ namespace AliDns
             client.BaseAddress = new Uri(BASE_URL);
             client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             DomainRecord = new DomainRecordApi(this);
+            Domain = new DomainApi(this);
         }
 
         /// <summary>
