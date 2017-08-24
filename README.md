@@ -1,5 +1,5 @@
 # AliDnsApi
-阿里云的域名云解析SDK for .NET Core 2.0
+阿里云域名解析管理Api for .NET Standard 2.0
 
 ### 如何使用
 
