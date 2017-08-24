@@ -1,6 +1,5 @@
 ﻿using AliDns;
 using AliDns.DomainRecord;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,25 +16,24 @@ namespace AliDnsUpdater.Services
     /// </summary>
     public class AliDnsUpdateService
     {
-        private readonly IOptions<AliDnsSettings> _optionsAccessor;
+        private readonly AliDnsSettings _cfg;
         private readonly AliDnsApi _api;
-        private Thread thread;
-        private string last_ip;
-        public DateTime last_update = DateTime.MinValue;
+        private Thread _thread;
+        private string _last_ip;
+        public DateTime _last_update = DateTime.MinValue;
 
-        public AliDnsUpdateService(IOptions<AliDnsSettings> optionsAccessor, AliDnsApi api)
+        public AliDnsUpdateService(AliDnsSettings cfg, AliDnsApi api)
         {
-            _optionsAccessor = optionsAccessor;
+            _cfg = cfg;
             _api = api;
             CheckAndStartUpdateThread();
         }
 
         private async void UpdateThread()
         {
-            int i = 0;
             do
             {
-                if (!((DateTime.Now - last_update).TotalMinutes > _optionsAccessor.Value.RefreshInterval))
+                if (!((DateTime.Now - _last_update).TotalMinutes > _cfg.Interval))
                 {
                     Thread.Sleep(60000);
                     continue;
@@ -43,20 +41,27 @@ namespace AliDnsUpdater.Services
                 try
                 {
                     var ip = await MyIP();
-                    if (ip == last_ip && i++ <= 10)
+                    if (string.IsNullOrWhiteSpace(ip))
                     {
-                        Thread.Sleep(60000);
-                        last_update = DateTime.Now;
+                        Console.WriteLine("获取外部IP错误。");
+                        Thread.Sleep(30000);//休息30s重试
                         continue;
                     }
-                    last_update = DateTime.Now;
-                    await Refresh(ip);
-                    last_ip = ip;
-                    i = 0;
+                    //24小时强制更新一次
+                    if (ip == _last_ip && (DateTime.Now - _last_update).TotalDays < 1)
+                    {
+                        Thread.Sleep(60000);
+                        _last_update = DateTime.Now;
+                        continue;
+                    }
+                    _last_update = DateTime.Now;
+                    var msg = await Refresh(ip);
+                    Console.WriteLine(msg);
+                    _last_ip = ip;
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    Console.WriteLine(ex.ToString());
                 }
 
             } while (true);
@@ -68,12 +73,12 @@ namespace AliDnsUpdater.Services
         {
             lock (this)
             {
-                if (!(_optionsAccessor.Value.RefreshInterval > 0))
+                if (!(_cfg.Interval > 0))
                     return;
-                if (thread?.IsAlive == true)
+                if (_thread?.IsAlive == true)
                     return;
-                thread = new Thread(UpdateThread);
-                thread.Start();
+                _thread = new Thread(UpdateThread);
+                _thread.Start();
             }
         }
 
@@ -96,7 +101,7 @@ namespace AliDnsUpdater.Services
             }
             catch
             {
-                return "0.0.0.0";
+                return null;
             }
         }
 
@@ -116,8 +121,8 @@ namespace AliDnsUpdater.Services
                 return $"IP地址非法:{ip}";
             ip = ipAddress.ToString();
             if (ip == "0.0.0.0")
-                return "IP不正确。";
-            var subDomains = _optionsAccessor.Value.Domains?.Where(o => string.IsNullOrWhiteSpace(o) == false)
+                return "IP不正确或者获取外部IP错误。";
+            var subDomains = _cfg.Domains?.Where(o => string.IsNullOrWhiteSpace(o) == false)
                   .Select(o => o.Trim().ToLower())
                   .Distinct().ToList();
             if (!(subDomains.Count > 0))
