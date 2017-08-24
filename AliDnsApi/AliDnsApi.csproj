@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>AliDns</RootNamespace>
     <Authors>Ho Null</Authors>
     <PackageProjectUrl>https://github.com/hetaoos/AliDnsApi</PackageProjectUrl>
     <Copyright>hetaoos@gmail.com</Copyright>
-    <Description>阿里云的域名云解析SDK for .NET Core 2.0</Description>
+    <Description>阿里云域名解析管理Api for .NET Standard 2.0</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageTags>aliyun dns ddns</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
