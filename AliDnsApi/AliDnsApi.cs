@@ -14,6 +14,7 @@ namespace AliDns
 {
     /// <summary>
     /// 阿里云DNS Api
+    /// 参见 https://help.aliyun.com/document_detail/29739.html
     /// </summary>
     public class AliDnsApi : IDisposable
     {
