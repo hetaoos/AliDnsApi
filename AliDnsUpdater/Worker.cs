@@ -151,7 +151,7 @@ namespace AliDnsUpdater
                     }))?.DomainRecords?.Record;
                     if (records == null)
                     {
-                        sb.AppendLine($"Query DNS records error£º{domain}");
+                        sb.AppendLine($"Query DNS records error: {domain}");
                         continue;
                     }
                     records = records.Where(o => o.Type == "A" || o.Type == "CNAME" || o.Type == "REDIRECT_URL" || o.Type == "FORWORD_URL").ToList();
@@ -164,7 +164,7 @@ namespace AliDnsUpdater
                             {
                                 if (old.Type == "A" && old.Value == ip)
                                 {
-                                    sb.AppendLine($"DNS record not updated£º{rr}.{domain} --> {ip}");
+                                    sb.AppendLine($"DNS record not updated: {rr}.{domain} --> {ip}");
                                     continue;
                                 }
                                 var rd = await _api.DomainRecord.UpdateDomainRecord(new UpdateDomainRecordParam()
@@ -175,7 +175,7 @@ namespace AliDnsUpdater
                                     Type = "A",
                                     Value = ip,
                                 });
-                                sb.AppendLine($"Update dns record success£º{rr}.{domain} --> {ip}");
+                                sb.AppendLine($"Update dns record success: {rr}.{domain} --> {ip}");
                             }
                             else//Ìí¼Ó
                             {
@@ -186,19 +186,19 @@ namespace AliDnsUpdater
                                     Type = "A",
                                     Value = ip,
                                 });
-                                sb.AppendLine($"Add dns record success£º{rr}.{domain} --> {ip}");
+                                sb.AppendLine($"Add dns record success: {rr}.{domain} --> {ip}");
                             }
                         }
                         catch
                         {
-                            sb.AppendLine($"Update dns records fail£º{rr}.{domain} --> {ip}");
+                            sb.AppendLine($"Update dns records fail: {rr}.{domain} --> {ip}");
                         }
                     }
                 }
 
                 if (subDomains.Count > 0)
                 {
-                    sb.AppendLine($"No permission to update the domain names£º{string.Join(", ", subDomains)}");
+                    sb.AppendLine($"No permission to update the domain names: {string.Join(", ", subDomains)}");
                 }
             } while (false);
 
