@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
+using System.Text;
 
 namespace AliDnsUpdater
 {
@@ -10,6 +11,8 @@ namespace AliDnsUpdater
     {
         public static void Main(string[] args)
         {
+            //×¢²á±àÂë
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             CreateHostBuilder(args).Build().Run();
         }
 
