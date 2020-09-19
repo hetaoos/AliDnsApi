@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace AliDnsUpdater.Services
+namespace AliDnsUpdater
 {
     /// <summary>
     /// 设置
@@ -15,6 +12,7 @@ namespace AliDnsUpdater.Services
         /// AccessId
         /// </summary>
         public string AccessId { get; set; }
+
         /// <summary>
         /// AccessKey
         /// </summary>

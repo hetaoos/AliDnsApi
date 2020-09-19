@@ -1,7 +1,9 @@
-ï»¿using AliDns;
+using AliDns;
 using AliDns.DomainRecord;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -9,33 +11,41 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AliDnsUpdater.Services
+namespace AliDnsUpdater
 {
-    /// <summary>
-    /// æ›´æ–°æœåŠ¡
-    /// </summary>
-    public class AliDnsUpdateService
+    public class Worker : BackgroundService
     {
         private readonly AliDnsSettings _cfg;
-        private readonly AliDnsApi _api;
-        private Thread _thread;
+        private readonly ILogger<Worker> _logger;
+        private AliDnsApi _api;
         private string _last_ip;
         public DateTime _last_update = DateTime.MinValue;
 
-        public AliDnsUpdateService(AliDnsSettings cfg, AliDnsApi api)
+        public Worker(IOptions<AliDnsSettings> options, ILogger<Worker> logger)
         {
-            _cfg = cfg;
-            _api = api;
-            CheckAndStartUpdateThread();
+            _cfg = options.Value;
+            _logger = logger;
         }
 
-        private async void UpdateThread()
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            do
+            var error = _cfg.GetError();
+            if (string.IsNullOrWhiteSpace(error) == false)
+            {
+                _logger.LogError(error);
+                throw new Exception(error);
+            }
+            if (_cfg.Interval <= 0)
+                _cfg.Interval = 10;
+            _api = new AliDnsApi(_cfg.AccessId, _cfg.AccessKey);
+
+            _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+
+            while (!stoppingToken.IsCancellationRequested)
             {
                 if (!((DateTime.Now - _last_update).TotalMinutes > _cfg.Interval))
                 {
-                    Thread.Sleep(60000);
+                    await Task.Delay(60_000, stoppingToken);
                     continue;
                 }
                 try
@@ -43,61 +53,40 @@ namespace AliDnsUpdater.Services
                     var ip = await MyIP();
                     if (string.IsNullOrWhiteSpace(ip))
                     {
-                        Console.WriteLine("è·å–å¤–éƒ¨IPé”™è¯¯ã€‚");
-                        Thread.Sleep(30000);//ä¼‘æ¯30sé‡è¯•
+                        Console.WriteLine("»ñÈ¡Íâ²¿IP´íÎó¡£");
+                        await Task.Delay(30_000, stoppingToken);//ĞİÏ¢30sÖØÊÔ
                         continue;
                     }
-                    //24å°æ—¶å¼ºåˆ¶æ›´æ–°ä¸€æ¬¡
+                    //24Ğ¡Ê±Ç¿ÖÆ¸üĞÂÒ»´Î
                     if (ip == _last_ip && (DateTime.Now - _last_update).TotalDays < 1)
                     {
-                        Thread.Sleep(60000);
+                        await Task.Delay(60_000, stoppingToken);//ĞİÏ¢30sÖØÊÔ
                         _last_update = DateTime.Now;
                         continue;
                     }
                     _last_update = DateTime.Now;
                     var msg = await Refresh(ip);
-                    Console.WriteLine(msg);
+                    _logger.LogInformation(msg);
                     _last_ip = ip;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    _logger.LogError(ex, "¸üĞÂ½âÎö´íÎó¡£");
                 }
-
-            } while (true);
-
-
-        }
-
-        private void CheckAndStartUpdateThread()
-        {
-            lock (this)
-            {
-                if (!(_cfg.Interval > 0))
-                    return;
-                if (_thread?.IsAlive == true)
-                    return;
-                _thread = new Thread(UpdateThread);
-                _thread.Start();
             }
         }
 
         /// <summary>
-        /// è·å–å½“å‰ip
+        /// »ñÈ¡µ±Ç°ip
         /// </summary>
         /// <returns></returns>
         public async Task<string> MyIP()
         {
             try
             {
-                using (HttpClientHandler httpClientHandler = new HttpClientHandler() { Proxy = null, UseProxy = false })
-                {
-                    using (HttpClient client = new HttpClient(httpClientHandler))
-                    {
-                        var ip = await client.GetStringAsync("http://whatismyip.akamai.com/");
-                        return ip;
-                    }
-                }
+                using var httpClientHandler = new HttpClientHandler();
+                using var client = new HttpClient(httpClientHandler);
+                return await client.GetStringAsync("http://whatismyip.akamai.com/");
             }
             catch
             {
@@ -106,56 +95,55 @@ namespace AliDnsUpdater.Services
         }
 
         /// <summary>
-        /// åˆ·æ–°ip
+        /// Ë¢ĞÂip
         /// </summary>
         /// <param name="ip">The ip.</param>
         /// <returns></returns>
         public async Task<string> Refresh(string ip)
         {
-            CheckAndStartUpdateThread();
             if (string.IsNullOrWhiteSpace(ip))
             {
                 ip = await MyIP();
             }
             if (IPAddress.TryParse(ip, out IPAddress ipAddress) == false)
-                return $"IPåœ°å€éæ³•:{ip}";
+                return $"IPµØÖ··Ç·¨:{ip}";
             ip = ipAddress.ToString();
             if (ip == "0.0.0.0")
-                return "IPä¸æ­£ç¡®æˆ–è€…è·å–å¤–éƒ¨IPé”™è¯¯ã€‚";
+                return "IP²»ÕıÈ·»òÕß»ñÈ¡Íâ²¿IP´íÎó¡£";
             var subDomains = _cfg.Domains?.Where(o => string.IsNullOrWhiteSpace(o) == false)
                   .Select(o => o.Trim().ToLower())
                   .Distinct().ToList();
             if (!(subDomains.Count > 0))
-                return "åŸŸååˆ—è¡¨ä¸ºç©ºã€‚";
+                return "ÓòÃûÁĞ±íÎª¿Õ¡£";
             StringBuilder sb = new StringBuilder();
             do
             {
                 var r = await _api.Domain.DescribeDomainRecords();
                 if (!(r.Domains?.Domain?.Count > 0))
                 {
-                    sb.AppendLine("è·å–åŸŸååˆ—è¡¨å‡ºé”™ï¼Œæˆ–è€…æ‚¨çš„è´¦æˆ·ä¸Šæ²¡æœ‰åŸŸåã€‚");
+                    sb.AppendLine("»ñÈ¡ÓòÃûÁĞ±í³ö´í£¬»òÕßÄúµÄÕË»§ÉÏÃ»ÓĞÓòÃû¡£");
                     break;
                 }
                 var domains = r.Domains.Domain.Select(o => o.DomainName.ToLower()).ToList();
                 foreach (var domain in domains)
                 {
-                    //æŸ¥æ‰¾è¯¥åŸŸåçš„å­åŸŸå
+                    //²éÕÒ¸ÃÓòÃûµÄ×ÓÓòÃû
                     var ls = subDomains.Where(o => o.EndsWith(domain)).ToList();
                     if (ls.Count == 0)
                         continue;
-                    //ç§»é™¤
+                    //ÒÆ³ı
                     subDomains.RemoveAll(o => ls.Contains(o));
                     var len = domain.Length;
-                    //è·å–å­åŸŸå
+                    //»ñÈ¡×ÓÓòÃû
                     ls = ls.Select(o => o.Substring(0, o.Length - len).Trim().Trim('.')).ToList();
-                    //æ›¿æ¢ç©ºä¸º@
+                    //Ìæ»»¿ÕÎª@
                     if (ls.Contains(""))
                     {
                         ls.Remove("");
                         ls.Add("@");
                         ls = ls.Distinct().ToList();
                     }
-                    //è·å–å·²æœ‰è®°å½•
+                    //»ñÈ¡ÒÑÓĞ¼ÇÂ¼
                     var records = (await _api.DomainRecord.DescribeDomainRecords(new DescribeDomainRecordsParam()
                     {
                         DomainName = domain,
@@ -163,7 +151,7 @@ namespace AliDnsUpdater.Services
                     }))?.DomainRecords?.Record;
                     if (records == null)
                     {
-                        sb.AppendLine($"è·å–åŸŸåè§£æè®°å½•é”™è¯¯ï¼š{domain}");
+                        sb.AppendLine($"»ñÈ¡ÓòÃû½âÎö¼ÇÂ¼´íÎó£º{domain}");
                         continue;
                     }
                     records = records.Where(o => o.Type == "A" || o.Type == "CNAME" || o.Type == "REDIRECT_URL" || o.Type == "FORWORD_URL").ToList();
@@ -172,11 +160,11 @@ namespace AliDnsUpdater.Services
                         var old = records.FirstOrDefault(o => o.RR == rr);
                         try
                         {
-                            if (old != null)//æ›´æ–°
+                            if (old != null)//¸üĞÂ
                             {
                                 if (old.Type == "A" && old.Value == ip)
                                 {
-                                    sb.AppendLine($"è§£æè®°å½•æœªæ›´æ–°ï¼š{rr}.{domain}");
+                                    sb.AppendLine($"½âÎö¼ÇÂ¼Î´¸üĞÂ£º{rr}.{domain}");
                                     continue;
                                 }
                                 var rd = await _api.DomainRecord.UpdateDomainRecord(new UpdateDomainRecordParam()
@@ -187,9 +175,9 @@ namespace AliDnsUpdater.Services
                                     Type = "A",
                                     Value = ip,
                                 });
-                                sb.AppendLine($"æ›´æ–°è§£æè®°å½•æˆåŠŸï¼š{rr}.{domain}");
+                                sb.AppendLine($"¸üĞÂ½âÎö¼ÇÂ¼³É¹¦£º{rr}.{domain}");
                             }
-                            else//æ·»åŠ 
+                            else//Ìí¼Ó
                             {
                                 var rd = await _api.DomainRecord.AddDomainRecord(new AddDomainRecordParam()
                                 {
@@ -198,21 +186,20 @@ namespace AliDnsUpdater.Services
                                     Type = "A",
                                     Value = ip,
                                 });
-                                sb.AppendLine($"æ–°å¢è§£æè®°å½•æˆåŠŸï¼š{rr}.{domain}");
+                                sb.AppendLine($"ĞÂÔö½âÎö¼ÇÂ¼³É¹¦£º{rr}.{domain}");
                             }
                         }
                         catch
                         {
-                            sb.AppendLine($"æ›´æ–°è§£æè®°å½•å¤±è´¥ï¼š{rr}.{domain}");
+                            sb.AppendLine($"¸üĞÂ½âÎö¼ÇÂ¼Ê§°Ü£º{rr}.{domain}");
                         }
                     }
                 }
 
                 if (subDomains.Count > 0)
                 {
-                    sb.AppendLine($"ä»¥ä¸‹åŸŸåæ— æ³•æ— æƒæ›´æ–°ï¼š{string.Join(", ", subDomains)}");
+                    sb.AppendLine($"ÒÔÏÂÓòÃûÎŞ·¨ÎŞÈ¨¸üĞÂ£º{string.Join(", ", subDomains)}");
                 }
-
             } while (false);
 
             return sb.ToString();

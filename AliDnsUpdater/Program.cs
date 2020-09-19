@@ -1,37 +1,43 @@
-ï»¿using AliDns;
-using AliDnsUpdater.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace AliDnsUpdater
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            var cfg = new AliDnsSettings();
-            //ä»ŽçŽ¯å¢ƒå˜é‡ä¸­è¯»å–é…ç½®
-            cfg.AccessId = Environment.GetEnvironmentVariable(nameof(cfg.AccessId));
-            cfg.AccessKey = Environment.GetEnvironmentVariable(nameof(cfg.AccessKey));
-            var value = Environment.GetEnvironmentVariable(nameof(cfg.Interval));
-            if (string.IsNullOrWhiteSpace(value) == false && double.TryParse(value, out double d) && d > 0)
-                cfg.Interval = (int)d;
-            cfg.Domains = Environment.GetEnvironmentVariable(nameof(cfg.Domains))?.Split(",; ã€ï¼Œï¼›".ToArray(), StringSplitOptions.RemoveEmptyEntries).ToList();
-
-            var error = cfg.GetError();
-            if (string.IsNullOrWhiteSpace(error) == false)
-            {
-                Console.WriteLine(error);
-            }
-            else
-            {
-                var api = new AliDnsApi(cfg.AccessId, cfg.AccessKey);
-                var service = new AliDnsUpdateService(cfg, api);
-                Console.WriteLine("starting...");
-            }
-            Console.ReadKey();
-
+            CreateHostBuilder(args).Build().Run();
         }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureServices((hostContext, services) =>
+                {
+                    services.Configure<AliDnsSettings>(cfg =>
+                    {
+                        //ÏÈ´ÓÅäÖÃÎÄ¼þ¶ÁÈ¡
+                        hostContext.Configuration.GetSection("AliDns").Bind(cfg);
+
+                        //´Ó»·¾³±äÁ¿ÖÐ¶ÁÈ¡ÅäÖÃ
+                        var accessId = Environment.GetEnvironmentVariable(nameof(cfg.AccessId));
+                        var accessKey = Environment.GetEnvironmentVariable(nameof(cfg.AccessKey));
+                        if (!(string.IsNullOrWhiteSpace(accessId) || string.IsNullOrWhiteSpace(accessKey)))
+                        {
+                            cfg.AccessId = accessId;
+                            cfg.AccessKey = accessKey;
+                        }
+                        var value = Environment.GetEnvironmentVariable(nameof(cfg.Interval));
+                        if (string.IsNullOrWhiteSpace(value) == false && double.TryParse(value, out double d) && d > 0)
+                            cfg.Interval = (int)d;
+                        var domains = Environment.GetEnvironmentVariable(nameof(cfg.Domains))?.Split(",; ¡¢£¬£»".ToArray(), StringSplitOptions.RemoveEmptyEntries).ToList();
+                        if (domains?.Any() == true)
+                            cfg.Domains = domains;
+                    });
+                    services.AddHostedService<Worker>();
+                });
     }
 }
