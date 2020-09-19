@@ -53,7 +53,7 @@ namespace AliDnsUpdater
                     var ip = await MyIP();
                     if (string.IsNullOrWhiteSpace(ip))
                     {
-                        Console.WriteLine("获取外部IP错误。");
+                        Console.WriteLine("Get external IP error.");
                         await Task.Delay(30_000, stoppingToken);//休息30s重试
                         continue;
                     }
@@ -71,7 +71,7 @@ namespace AliDnsUpdater
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "更新解析错误。");
+                    _logger.LogError(ex, "Update domain name dns record error.");
                 }
             }
         }
@@ -106,22 +106,22 @@ namespace AliDnsUpdater
                 ip = await MyIP();
             }
             if (IPAddress.TryParse(ip, out IPAddress ipAddress) == false)
-                return $"IP地址非法:{ip}";
+                return $"The external IP address is incorrect: {ip}";
             ip = ipAddress.ToString();
             if (ip == "0.0.0.0")
-                return "IP不正确或者获取外部IP错误。";
+                return $"The external IP address is incorrect: {ip}";
             var subDomains = _cfg.Domains?.Where(o => string.IsNullOrWhiteSpace(o) == false)
                   .Select(o => o.Trim().ToLower())
                   .Distinct().ToList();
             if (!(subDomains.Count > 0))
-                return "域名列表为空。";
+                return "Domain list is empty.";
             StringBuilder sb = new StringBuilder();
             do
             {
                 var r = await _api.Domain.DescribeDomainRecords();
                 if (!(r.Domains?.Domain?.Count > 0))
                 {
-                    sb.AppendLine("获取域名列表出错，或者您的账户上没有域名。");
+                    sb.AppendLine("Get a list of domain names wrong, or no domain name on your account.");
                     break;
                 }
                 var domains = r.Domains.Domain.Select(o => o.DomainName.ToLower()).ToList();
@@ -151,7 +151,7 @@ namespace AliDnsUpdater
                     }))?.DomainRecords?.Record;
                     if (records == null)
                     {
-                        sb.AppendLine($"获取域名解析记录错误：{domain}");
+                        sb.AppendLine($"Query DNS records error：{domain}");
                         continue;
                     }
                     records = records.Where(o => o.Type == "A" || o.Type == "CNAME" || o.Type == "REDIRECT_URL" || o.Type == "FORWORD_URL").ToList();
@@ -164,7 +164,7 @@ namespace AliDnsUpdater
                             {
                                 if (old.Type == "A" && old.Value == ip)
                                 {
-                                    sb.AppendLine($"解析记录未更新：{rr}.{domain}");
+                                    sb.AppendLine($"DNS record not updated：{rr}.{domain} --> {ip}");
                                     continue;
                                 }
                                 var rd = await _api.DomainRecord.UpdateDomainRecord(new UpdateDomainRecordParam()
@@ -175,7 +175,7 @@ namespace AliDnsUpdater
                                     Type = "A",
                                     Value = ip,
                                 });
-                                sb.AppendLine($"更新解析记录成功：{rr}.{domain}");
+                                sb.AppendLine($"Update dns record success：{rr}.{domain} --> {ip}");
                             }
                             else//添加
                             {
@@ -186,19 +186,19 @@ namespace AliDnsUpdater
                                     Type = "A",
                                     Value = ip,
                                 });
-                                sb.AppendLine($"新增解析记录成功：{rr}.{domain}");
+                                sb.AppendLine($"Add dns record success：{rr}.{domain} --> {ip}");
                             }
                         }
                         catch
                         {
-                            sb.AppendLine($"更新解析记录失败：{rr}.{domain}");
+                            sb.AppendLine($"Update dns records fail：{rr}.{domain} --> {ip}");
                         }
                     }
                 }
 
                 if (subDomains.Count > 0)
                 {
-                    sb.AppendLine($"以下域名无法无权更新：{string.Join(", ", subDomains)}");
+                    sb.AppendLine($"No permission to update the domain names：{string.Join(", ", subDomains)}");
                 }
             } while (false);
 

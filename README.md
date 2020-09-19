@@ -11,3 +11,19 @@ var r = await api.DomainRecord.DescribeDomainRecords(new DescribeDomainRecordsPa
              DomainName = "xware.io",
         });
 ```
+
+### Docker
+```
+docker run -d \
+    --env AccessId=xxxx \
+    --env AccessKey=xxx \
+    --env Interval=10 \
+    --env Domains=demo.com,*.demo.com,www.demo.com \
+    hetaoos/alidns
+```
+
+**Environment Variables**
+- **AccessId**: AccessId
+- **AccessKey**: AccessKey
+- **Interval**: IP detection interval (minutes), (default: 10)
+- **Domains**: The dns record list, multiple records are separated by commas.

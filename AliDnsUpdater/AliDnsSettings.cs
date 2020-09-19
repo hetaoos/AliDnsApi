@@ -36,11 +36,11 @@ namespace AliDnsUpdater
         {
             StringBuilder sb = new StringBuilder();
             if (string.IsNullOrWhiteSpace(AccessId))
-                sb.AppendLine($"{nameof(AccessId)} 不能为空。");
+                sb.AppendLine($"The {nameof(AccessId)} value is invalid.");
             if (string.IsNullOrWhiteSpace(AccessKey))
-                sb.AppendLine($"{nameof(AccessKey)} 不能为空。");
+                sb.AppendLine($"The {nameof(AccessKey)} value is invalid.");
             if (!(Domains?.Count > 0))
-                sb.AppendLine($"{nameof(Domains)} 不能为空。");
+                sb.AppendLine($"The {nameof(Domains)} value is invalid.");
             return sb.ToString();
         }
     }
