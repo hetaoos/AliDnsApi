@@ -1,19 +1,21 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:2.2 AS build
+#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1-buster-slim AS base
 WORKDIR /app
 ENV TZ=Asia/Shanghai
 
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
 COPY ["AliDnsUpdater/AliDnsUpdater.csproj", "AliDnsUpdater/"]
-COPY ["AliDnsApi/AliDnsApi.csproj", "AliDnsApi/"]
-
 RUN dotnet restore "AliDnsUpdater/AliDnsUpdater.csproj"
 COPY . .
 WORKDIR "/src/AliDnsUpdater"
+RUN dotnet build "AliDnsUpdater.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "AliDnsUpdater.csproj" -c Release -o /app
+RUN dotnet publish "AliDnsUpdater.csproj" -c Release -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/core/runtime:2.2 AS runtime
+FROM base AS final
 WORKDIR /app
-COPY --from=publish /app .
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "AliDnsUpdater.dll"]
