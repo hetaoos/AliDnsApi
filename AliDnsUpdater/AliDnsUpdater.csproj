@@ -1,15 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>dotnet-AliDnsUpdater-322C2BC5-CD68-4740-A772-F4A852FCD513</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.8" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="4.7.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
